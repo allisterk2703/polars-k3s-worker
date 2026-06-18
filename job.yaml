@@ -1,0 +1,50 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: polars-ml-pipeline
+  namespace: default
+  labels:
+    app: polars-ml-pipeline
+spec:
+  # One completion per node — each gets a unique JOB_COMPLETION_INDEX (0..N-1).
+  # Set both values to the number of nodes in the cluster.
+  completions: 4
+  parallelism: 4
+  completionMode: Indexed
+  backoffLimit: 6
+  template:
+    metadata:
+      labels:
+        app: polars-ml-pipeline
+    spec:
+      restartPolicy: Never
+      # Spread exactly one pod per node; if a node is full the pod stays Pending.
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: polars-ml-pipeline
+      containers:
+        - name: worker
+          image: lester2703/polars-k3s-worker:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: TOTAL_PARTITIONS
+              value: "32"
+            # INDEX_OFFSET is no longer needed: JOB_COMPLETION_INDEX (0..N-1)
+            # maps directly to a partition range computed inside the worker.
+            - name: MINIO_ENDPOINT
+              value: "http://192.168.0.33:9000"
+            - name: MINIO_ACCESS_KEY
+              value: "minioadmin"
+            - name: MINIO_SECRET_KEY
+              value: "minioadmin"
+          resources:
+            requests:
+              cpu: "1"
+              memory: 2Gi
+            limits:
+              cpu: "2"
+              memory: 4Gi
