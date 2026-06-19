@@ -1,6 +1,6 @@
 # polars-k3s-worker
 
-Distributed text embedding pipeline running on a 2-node k3s cluster (MacBook Pro M1 + Raspberry Pi 5).
+Distributed text embedding pipeline running on a 2-node k3s cluster (MacBook + Raspberry Pi 5).
 
 The dataset is split into 32 Parquet partitions stored in MinIO. Each Kubernetes Job schedules indexed workers on a specific node: every worker reads its assigned partition, cleans the text with Polars, generates sentence embeddings using `all-MiniLM-L6-v2` (SentenceTransformers), and writes the result back to MinIO as a new Parquet file with an `embeddings` column.
 
